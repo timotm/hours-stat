@@ -31,7 +31,7 @@ class HolidayCount
 end
 
 def billable(tuntikoodi)
-  not tuntikoodi.match /^internal-|^poissa-|^inhouse-|^fusion-|^N4S-|^cloud/
+  not tuntikoodi.match /^internal-|^poissa-|^inhouse-|^fusion-|^N4S-|^cloud|^vacation|^sick|^other|^flexi|^hours/
 end
 
 # http://stackoverflow.com/questions/4027768/calculate-number-of-business-days-between-two-days
