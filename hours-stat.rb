@@ -135,7 +135,9 @@ Dir.entries($hours_dir).select { |e| e.match /[0-9]{4}_[0-9]{2}/ }.sort.each do 
       next if line.match /^ *#/
 
       (_, tunnit, tuntikoodi, _) = line.split "\t"
-      hour_storage.store_hours_for_date_code(month_as_date, tuntikoodi, tunnit.gsub(',', '.').to_f)
+      if !tunnit.nil?
+        hour_storage.store_hours_for_date_code(month_as_date, tuntikoodi, tunnit.gsub(',', '.').to_f)
+      end
     end
   end
 end
