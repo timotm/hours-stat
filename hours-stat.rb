@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 require 'date'
+require 'rexml/document'
 
 months = %w(Tammi Helmi Maalis Huhti Touko Kesä Heinä Elo Syys Loka Marras Joulu).map { |m| "#{m}kuu" }
 
@@ -30,9 +31,41 @@ class HolidayCount
   end
 end
 
-def billable(tuntikoodi)
-  not tuntikoodi.match /^internal-|^poissa-|^inhouse-|^fusion-|^N4S-|^cloud|^vacation|^sick|^other|^flexi|^hours/
+class String
+  def colorize(text, color_code)
+    "#{color_code}#{text}\033[0m"
+  end
+
+  def red
+    colorize(self, "\033[31m")
+  end
 end
+
+class ProjectStore
+  attr_reader :projects
+
+  def initialize
+    @projects = File.open("#{$hours_dir}/projects.xml") do |f|
+      x = REXML::Document.new(f.read)
+      h = {}
+      x.get_elements('//project').each { |e| h[e.attributes['name']] = (e.attributes['billable'] == 'true') }
+      h
+    end
+  end
+
+  def billable(tuntikoodi)
+    project = tuntikoodi.split('-')[0]
+
+    if not @projects.has_key? project
+      $stderr.puts "*** Tuntematon projekti #{project}, oletetaan laskuttamaton".red
+    end
+    @projects[project] || false
+  end
+
+end
+
+project_store = ProjectStore.new
+
 
 # http://stackoverflow.com/questions/4027768/calculate-number-of-business-days-between-two-days
 #
@@ -115,8 +148,8 @@ hour_storage.hours_by_year_month_code.sort_by { |k,v| k }.each do |year, hours_b
   puts "#### Vuosi #{year} #####"
 
   hours_by_month_code.sort_by { |k,v| k }.each do |month, hours_by_code|
-    laskutettavat = hours_by_code.select { |k, v| billable(k) }
-    muut = hours_by_code.select { |k, v| not billable(k) }
+    laskutettavat = hours_by_code.select { |k, v| project_store.billable(k) }
+    muut = hours_by_code.select { |k, v| not project_store.billable(k) }
 
     tehdyt_tunnit_yhteensä = hours_by_code.values.inject(:+) || 0
     laskutettavat_yhteensä = laskutettavat.values.inject(:+) || 0
