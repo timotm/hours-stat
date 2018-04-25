@@ -101,6 +101,10 @@ def perce(f)
   "#{(f * 100).round(1)}"
 end
 
+def div(dividend, divisor)
+  return divisor == 0 ? 0 : dividend / divisor
+end
+
 class HourStorage
   attr_reader :hours_by_year_month_code
 
@@ -170,17 +174,17 @@ hour_storage.hours_by_year_month_code.sort_by { |k,v| k }.each do |year, hours_b
     puts "\n  ### #{months[month-1]} #{year}"
 
     puts "  Yhteensä #{tehdyt_tunnit_yhteensä} h kuukauden #{kuussa_tunteja_yhteensä} työtunnista joista"
-    puts "    - laskutettavia #{laskutettavat_yhteensä} h, laskutusaste #{perce(laskutettavat_yhteensä / kuussa_tunteja_yhteensä)} %"
+    puts "    - laskutettavia #{laskutettavat_yhteensä} h, laskutusaste #{perce(div(laskutettavat_yhteensä, kuussa_tunteja_yhteensä))} %"
     laskutettavat.nonzero_values_descending.each do |tuntikoodi, tunnit|
       puts "       #{tunnit}\t#{tuntikoodi}"
     end
 
-     puts "    - laskutettamattomia #{muut_yhteensä} h, laskuttamattomuusaste #{perce(muut_yhteensä / kuussa_tunteja_yhteensä)} %"
+     puts "    - laskutettamattomia #{muut_yhteensä} h, laskuttamattomuusaste #{perce(div(muut_yhteensä, kuussa_tunteja_yhteensä))} %"
      muut.nonzero_values_descending.each do |tuntikoodi, tunnit|
        puts "       #{tunnit}\t#{tuntikoodi}"
     end
   end
 
-  puts "\nVuonna #{year} yhteensä:\n#{koko_vuoden_tehdyt} h vuoden #{vuodessa_tunteja} työtunnista joista laskutettavia #{koko_vuoden_laskutettavat} h, laskutusaste #{perce(koko_vuoden_laskutettavat / vuodessa_tunteja)} %\n"
+  puts "\nVuonna #{year} yhteensä:\n#{koko_vuoden_tehdyt} h vuoden #{vuodessa_tunteja} työtunnista joista laskutettavia #{koko_vuoden_laskutettavat} h, laskutusaste #{perce(div(koko_vuoden_laskutettavat, vuodessa_tunteja))} %\n"
 end
 
