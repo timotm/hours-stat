@@ -163,7 +163,7 @@ hour_storage.hours_by_year_month_code.sort_by { |k,v| k }.each do |year, hours_b
 
     first_day_of_month = Date.new(year, month, 1)
     last_day_of_month = Date.new(year, month, 1).next_month.prev_day
-    kuussa_tunteja_yhteensä = 7.5 * (1 + business_days_between(first_day_of_month,
+    kuussa_tunteja_yhteensä = 7.5 * (business_days_between(first_day_of_month,
                                                                [last_day_of_month, Date.today].min) -
                                      holiday_counter.for_month(year, month))
 
