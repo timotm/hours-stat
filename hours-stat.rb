@@ -177,7 +177,7 @@ hour_storage.hours_by_year_month_code.sort_by { |k,v| k }.each do |year, hours_b
     koko_vuoden_tehdyt += tehdyt_tunnit_yhteensä
     vuodessa_tunteja += kuussa_tunteja_yhteensä
 
-    # Added a breakdown of days used in the calculations to help in bug spotting (and to fuck with people's minds -- why the fuck business_days - holidays != workdays???)
+    # Added a breakdown of days used in the calculations to help in bug spotting
     puts "\n  ### #{months[month-1]} #{year} (#{business_days} arkipäivää, #{holidays} arkipäiviin osuvaa vapaapäivää ja #{workdays} työpäivää)"
 
     puts "  Yhteensä #{tehdyt_tunnit_yhteensä} h kuukauden #{kuussa_tunteja_yhteensä} työtunnista joista"
