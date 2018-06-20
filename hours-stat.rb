@@ -166,11 +166,10 @@ hour_storage.hours_by_year_month_code.sort_by { |k,v| k }.each do |year, hours_b
     first_day_of_month = Date.new(year, month, 1)
     last_day_of_month = Date.new(year, month, 1).next_month.prev_day
 
-    # If counting business days of current month include today by counting from tomorrow; hence the + 1
-    business_days = business_days_between(first_day_of_month, [last_day_of_month, Date.today + 1].min)
+    # business_days_between calculates the days in a range which is open at the beginning: (from, to]; hence the first_day_of_month -1
+    business_days = business_days_between(first_day_of_month - 1, [last_day_of_month, Date.today].min)
     holidays = holiday_counter.for_month(year, month)
-    # TIL you can't just substract holidays from business days and get workdays. You have to + 1 in order to get the correct result. I am too tired right now to understand why. If you get it please pm @horttanainen.
-    workdays = if holidays.zero? then business_days else business_days - holidays + 1 end
+    workdays = business_days - holidays
 
     kuussa_tunteja_yhteensä = 7.5 * workdays;
 
