@@ -19,7 +19,8 @@ class HolidayCount
     File.open("#{$hours_dir}/holidays.txt") do |f|
       while (line = f.gets) do
         d = Date.strptime(line.split(' ')[0], "%d.%m.%Y")
-        if not d.saturday? and not d.sunday?
+        # Don't count holidays that are either in the weekends or in the future
+        if not d.saturday? and not d.sunday? and not d > Date.today
           @holidays_per_month[key_for_date(d)] += 1
         end
       end
@@ -164,15 +165,20 @@ hour_storage.hours_by_year_month_code.sort_by { |k,v| k }.each do |year, hours_b
 
     first_day_of_month = Date.new(year, month, 1)
     last_day_of_month = Date.new(year, month, 1).next_month.prev_day
-    kuussa_tunteja_yhteensä = 7.5 * (business_days_between(first_day_of_month,
-                                                               [last_day_of_month, Date.today].min) -
-                                     holiday_counter.for_month(year, month))
+
+    # business_days_between calculates the days in a range which is open at the beginning: (from, to]; hence the first_day_of_month -1
+    business_days = business_days_between(first_day_of_month - 1, [last_day_of_month, Date.today].min)
+    holidays = holiday_counter.for_month(year, month)
+    workdays = business_days - holidays
+
+    kuussa_tunteja_yhteensä = 7.5 * workdays;
 
     koko_vuoden_laskutettavat += laskutettavat_yhteensä
     koko_vuoden_tehdyt += tehdyt_tunnit_yhteensä
     vuodessa_tunteja += kuussa_tunteja_yhteensä
 
-    puts "\n  ### #{months[month-1]} #{year}"
+    # Added a breakdown of days used in the calculations to help in bug spotting
+    puts "\n  ### #{months[month-1]} #{year} (#{business_days} arkipäivää, #{holidays} arkipäiviin osuvaa vapaapäivää ja #{workdays} työpäivää)"
 
     puts "  Yhteensä #{tehdyt_tunnit_yhteensä} h kuukauden #{kuussa_tunteja_yhteensä} työtunnista joista"
     puts "    - laskutettavia #{laskutettavat_yhteensä} h, laskutusaste #{perce(div(laskutettavat_yhteensä, kuussa_tunteja_yhteensä))} %"
