@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 require 'date'
-require 'rexml/document'
+require 'json'
 
 months = %w(Tammi Helmi Maalis Huhti Touko Kesä Heinä Elo Syys Loka Marras Joulu).map { |m| "#{m}kuu" }
 
@@ -46,10 +46,10 @@ class ProjectStore
   attr_reader :projects
 
   def initialize
-    @projects = File.open("#{$hours_dir}/projects.xml") do |f|
-      x = REXML::Document.new(f.read)
+    @projects = File.open("#{$hours_dir}/projects.json") do |f|
+      j = JSON.parse(f.read)
       h = {}
-      x.get_elements('//project').each { |e| h[e.attributes['name']] = (e.attributes['billable'] == 'true') }
+      j['projects'].each { |e| h[e['name']] = e['billable'] }
       h
     end
   end
