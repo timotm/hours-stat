@@ -8,6 +8,7 @@ require 'optparse'
 $options = {}
 OptionParser.new do |opt|
   opt.on('--lang LANG', [:fi, :en], "Language (fi/en)") { |l| $options[:lang] = l }
+  opt.on('--hours HOURS', Float, "Number of working hours per day. If not given, guessed per year") { |h| $options[:hours_per_day] = h }
 end.parse!
 
 $lang = $options[:lang] || :fi
@@ -44,8 +45,8 @@ $strings = { :unknown_project => {
                :en => "    - non-billable %{hours} h, non-billing ratio %{ratio} %"
              },
              :year_total => {
-               :fi => "\nVuonna %{year} yhteensä:\n%{done_hours} h vuoden %{hours_in_year} työtunnista joista laskutettavia %{billable_in_year} h, laskutusaste %{billing_ratio} %\n",
-               :en => "\nYear %{year} total:\n%{done_hours} h out of %{hours_in_year} hours of the year, out of which %{billable_in_year} h billable, billing ratio %{billing_ratio} %\n\n"
+               :fi => "\nVuonna %{year} yhteensä (olettaen %{hours_per_day} h työpäivän):\n%{done_hours} h vuoden %{hours_in_year} työtunnista joista laskutettavia %{billable_in_year} h, laskutusaste %{billing_ratio} %\n",
+               :en => "\nYear %{year} total (assuming %{hours_per_day} h working day):\n%{done_hours} h out of %{hours_in_year} hours of the year, out of which %{billable_in_year} h billable, billing ratio %{billing_ratio} %\n\n"
              }
            }
 
@@ -62,6 +63,7 @@ class HolidayCount
 
   def initialize
     @holidays_per_month = Hash.new(0)
+    @country_per_year = Hash.new(:fin)
 
     File.open("#{$hours_dir}/holidays.txt") do |f|
       while (line = f.gets) do
@@ -70,12 +72,21 @@ class HolidayCount
         if not d.saturday? and not d.sunday? and not d > Date.today
           @holidays_per_month[key_for_date(d)] += 1
         end
+        if /#{d.year}.*(uuden|loppiai|pääsiäis|helatorstai|vappu|helatorstai|juhannus|itsenäisyys|joulu)/i.match line
+          @country_per_year[d.year] = :fin
+        elsif /#{d.year}.*(new year|martin luther king|washington|memorial|independence|thanksgiving|christmas)/i.match line
+          @country_per_year[d.year] = :us
+        end
       end
     end
   end
 
   def for_month(year, month)
     @holidays_per_month[key_for_date(Date.new(year, month, 1))]
+  end
+
+  def country_for_year(year)
+    @country_per_year[year]
   end
 end
 
@@ -175,7 +186,7 @@ end
 
 
 hour_storage = HourStorage.new
-holiday_counter = HolidayCount.new
+$holiday_counter = HolidayCount.new
 
 Dir.entries($hours_dir).select { |e| e.match /[0-9]{4}_[0-9]{2}/ }.sort.each do |month|
   month_as_date = Date.strptime(month, '%Y_%m')
@@ -192,6 +203,14 @@ Dir.entries($hours_dir).select { |e| e.match /[0-9]{4}_[0-9]{2}/ }.sort.each do 
         hour_storage.store_hours_for_date_code(month_as_date, tuntikoodi, tunnit.gsub(',', '.').to_f)
       end
     end
+  end
+end
+
+def working_hours_per_day_for_year(year)
+  if $options[:hours_per_day]
+    $options[:hours_per_day]
+  else
+    { :fin => 7.5, :us => 8 }[$holiday_counter.country_for_year(year)]
   end
 end
 
@@ -215,11 +234,11 @@ hour_storage.hours_by_year_month_code.sort_by { |k,v| k }.each do |year, hours_b
 
     # business_days_between calculates the days in a range which is open at the beginning: (from, to]; hence the first_day_of_month -1
     business_days = business_days_between(first_day_of_month - 1, [last_day_of_month, Date.today].min)
-    holidays = holiday_counter.for_month(year, month)
+    holidays = $holiday_counter.for_month(year, month)
     workdays = business_days - holidays
 
     #    kuussa_tunteja_yhteensä = 7.5 * workdays;
-    kuussa_tunteja_yhteensä = 7.5 * workdays;
+    kuussa_tunteja_yhteensä = working_hours_per_day_for_year(year) * workdays;
 
     koko_vuoden_laskutettavat += laskutettavat_yhteensä
     koko_vuoden_tehdyt += tehdyt_tunnit_yhteensä
@@ -241,5 +260,5 @@ hour_storage.hours_by_year_month_code.sort_by { |k,v| k }.each do |year, hours_b
     end
   end
 
-  puts T(:year_total) % { :year => year, :done_hours => koko_vuoden_tehdyt, :hours_in_year => vuodessa_tunteja, :billable_in_year => koko_vuoden_laskutettavat, :billing_ratio => perce(div(koko_vuoden_laskutettavat, vuodessa_tunteja)) }
+  puts T(:year_total) % { :year => year, :hours_per_day => working_hours_per_day_for_year(year), :done_hours => koko_vuoden_tehdyt, :hours_in_year => vuodessa_tunteja, :billable_in_year => koko_vuoden_laskutettavat, :billing_ratio => perce(div(koko_vuoden_laskutettavat, vuodessa_tunteja)) }
 end
