@@ -3,10 +3,57 @@
 
 require 'date'
 require 'json'
+require 'optparse'
 
-months = %w(Tammi Helmi Maalis Huhti Touko Kesä Heinä Elo Syys Loka Marras Joulu).map { |m| "#{m}kuu" }
+$options = {}
+OptionParser.new do |opt|
+  opt.on('--lang LANG', [:fi, :en], "Language (fi/en)") { |l| $options[:lang] = l }
+end.parse!
+
+$lang = $options[:lang] || :fi
+
+$months = { :fi => %w(Tammi Helmi Maalis Huhti Touko Kesä Heinä Elo Syys Loka Marras Joulu).map { |m| "#{m}kuu" },
+            :en => %w(January February March April May June July August September October November December) }
+
+$strings = { :unknown_project => {
+               :fi => "*** Tuntematon projekti %{project}, oletetaan laskuttamaton",
+               :en => "*** Unknown project %{project}, assuming it's non-billable"
+             },
+             :year => {
+               :fi => "#### Vuosi %{year} #####",
+               :en => "#### Year %{year} #####"
+             },
+             :month_info => {
+               :fi => "\n  ### %{month} %{year} (%{business_days} arkipäivää, %{holidays} arkipäiviin osuvaa vapaapäivää ja %{workdays} työpäivää)",
+               :en => "\n  ### %{month} %{year} (%{business_days} business days, %{holidays} holidays and %{workdays} work days)"
+             },
+             :month_total => {
+               :fi => "  Yhteensä %{done_hours} h kuukauden %{hours_in_month} työtunnista joista",
+               :en => "  Total of %{done_hours} h out of %{hours_in_month} of the month, out of which"
+             },
+             :billable => {
+               :fi => "    - laskutettavia %{hours} h, laskutusaste %{ratio} %",
+               :en => "    - billable %{hours} h, billing ratio %{ratio} %"
+             },
+             :hours_per_code => {
+               :fi => "       %{hours}\t%{code}",
+               :en => "       %{hours}\t%{code}"
+             },
+             :non_billable => {
+               :fi => "    - laskutettamattomia %{hours} h, laskuttamattomuusaste %{ratio} %",
+               :en => "    - non-billable %{hours} h, non-billing ratio %{ratio} %"
+             },
+             :year_total => {
+               :fi => "\nVuonna %{year} yhteensä:\n%{done_hours} h vuoden %{hours_in_year} työtunnista joista laskutettavia %{billable_in_year} h, laskutusaste %{billing_ratio} %\n",
+               :en => "\nYear %{year} total:\n%{done_hours} h out of %{hours_in_year} hours of the year, out of which %{billable_in_year} h billable, billing ratio %{billing_ratio} %\n\n"
+             }
+           }
 
 $hours_dir = "#{ENV['HOME']}/.hours"
+
+def T(key)
+  $strings[key][$lang]
+end
 
 class HolidayCount
   def key_for_date(d)
@@ -58,7 +105,7 @@ class ProjectStore
     project = tuntikoodi.split('-')[0]
 
     if not @projects.has_key? project
-      $stderr.puts "*** Tuntematon projekti #{project}, oletetaan laskuttamaton".red
+      $stderr.puts T(:unknown_project).red % { :project => project }
     end
     @projects[project] || false
   end
@@ -153,7 +200,7 @@ hour_storage.hours_by_year_month_code.sort_by { |k,v| k }.each do |year, hours_b
   koko_vuoden_tehdyt = 0
   vuodessa_tunteja = 0
 
-  puts "#### Vuosi #{year} #####"
+  puts T(:year) % {:year => year}
 
   hours_by_month_code.sort_by { |k,v| k }.each do |month, hours_by_code|
     laskutettavat = hours_by_code.select { |k, v| project_store.billable(k) }
@@ -171,6 +218,7 @@ hour_storage.hours_by_year_month_code.sort_by { |k,v| k }.each do |year, hours_b
     holidays = holiday_counter.for_month(year, month)
     workdays = business_days - holidays
 
+    #    kuussa_tunteja_yhteensä = 7.5 * workdays;
     kuussa_tunteja_yhteensä = 7.5 * workdays;
 
     koko_vuoden_laskutettavat += laskutettavat_yhteensä
@@ -178,20 +226,20 @@ hour_storage.hours_by_year_month_code.sort_by { |k,v| k }.each do |year, hours_b
     vuodessa_tunteja += kuussa_tunteja_yhteensä
 
     # Added a breakdown of days used in the calculations to help in bug spotting
-    puts "\n  ### #{months[month-1]} #{year} (#{business_days} arkipäivää, #{holidays} arkipäiviin osuvaa vapaapäivää ja #{workdays} työpäivää)"
+    puts T(:month_info) % {:month => $months[$lang][month-1], :year => year, :business_days => business_days, :holidays => holidays, :workdays => workdays }
 
-    puts "  Yhteensä #{tehdyt_tunnit_yhteensä} h kuukauden #{kuussa_tunteja_yhteensä} työtunnista joista"
-    puts "    - laskutettavia #{laskutettavat_yhteensä} h, laskutusaste #{perce(div(laskutettavat_yhteensä, kuussa_tunteja_yhteensä))} %"
+    puts T(:month_total) % {:done_hours => tehdyt_tunnit_yhteensä, :hours_in_month => kuussa_tunteja_yhteensä}
+    puts T(:billable) % { :hours => laskutettavat_yhteensä, :ratio => perce(div(laskutettavat_yhteensä, kuussa_tunteja_yhteensä)) }
     laskutettavat.nonzero_values_descending.each do |tuntikoodi, tunnit|
-      puts "       #{tunnit}\t#{tuntikoodi}"
+      puts T(:hours_per_code) % { :hours => tunnit, :code => tuntikoodi }
     end
 
-     puts "    - laskutettamattomia #{muut_yhteensä} h, laskuttamattomuusaste #{perce(div(muut_yhteensä, kuussa_tunteja_yhteensä))} %"
-     muut.nonzero_values_descending.each do |tuntikoodi, tunnit|
-       puts "       #{tunnit}\t#{tuntikoodi}"
+    puts T(:non_billable) % { :hours => muut_yhteensä, :ratio => perce(div(muut_yhteensä, kuussa_tunteja_yhteensä)) }
+
+    muut.nonzero_values_descending.each do |tuntikoodi, tunnit|
+      puts T(:hours_per_code) % { :hours => tunnit, :code => tuntikoodi }
     end
   end
 
-  puts "\nVuonna #{year} yhteensä:\n#{koko_vuoden_tehdyt} h vuoden #{vuodessa_tunteja} työtunnista joista laskutettavia #{koko_vuoden_laskutettavat} h, laskutusaste #{perce(div(koko_vuoden_laskutettavat, vuodessa_tunteja))} %\n"
+  puts T(:year_total) % { :year => year, :done_hours => koko_vuoden_tehdyt, :hours_in_year => vuodessa_tunteja, :billable_in_year => koko_vuoden_laskutettavat, :billing_ratio => perce(div(koko_vuoden_laskutettavat, vuodessa_tunteja)) }
 end
-
