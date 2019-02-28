@@ -1,0 +1,36 @@
+Metrics/LineLength:
+  Max: 120
+
+GlobalVars:
+  Enabled: false
+
+Style/Documentation:
+  Enabled: false
+
+Metrics/AbcSize:
+  Enabled: false
+
+Metrics/CyclomaticComplexity:
+  Enabled: false
+
+Metrics/MethodLength:
+  Enabled: false
+
+Metrics/PerceivedComplexity:
+  Enabled: false
+
+Naming/UncommunicativeMethodParamName:
+  Enabled: false
+
+Naming/AsciiIdentifiers:
+  Enabled: false
+
+# doesn't like non-ascii identifiers :-(
+Naming/VariableName:
+  Enabled: false
+
+Metrics/BlockLength:
+  Enabled: false
+
+Style/Encoding:
+  Enabled: false
