@@ -117,7 +117,7 @@ class ProjectStore
   def billable(tuntikoodi)
     project = tuntikoodi.split('-')[0]
 
-    if not @projects.has_key? project
+    unless @projects.has_key? project
       $stderr.puts T(:unknown_project).red % { :project => project }
     end
     @projects[project] || false
@@ -174,11 +174,11 @@ class HourStorage
   end
 
   def store_hours_for_date_code(d, code, hours)
-    if not @hours_by_year_month_code.has_key? d.year
+    unless @hours_by_year_month_code.has_key? d.year
       @hours_by_year_month_code[d.year] = {}
     end
 
-    if not @hours_by_year_month_code[d.year].has_key? d.month
+    unless @hours_by_year_month_code[d.year].has_key? d.month
       @hours_by_year_month_code[d.year][d.month] = Hash.new(0)
     end
 
