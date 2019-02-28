@@ -5,6 +5,8 @@ require 'date'
 require 'json'
 require 'optparse'
 
+Encoding.default_external = Encoding::UTF_8
+
 $options = {}
 OptionParser.new do |opt|
   opt.on('--lang LANG', [:fi, :en], "Language (fi/en)") { |l| $options[:lang] = l }
@@ -33,16 +35,16 @@ $strings = { :unknown_project => {
                :en => "  Total of %{done_hours} h out of %{hours_in_month} of the month, out of which"
              },
              :billable => {
-               :fi => "    - laskutettavia %{hours} h, laskutusaste %{ratio} %",
-               :en => "    - billable %{hours} h, billing ratio %{ratio} %"
+               :fi => "    - laskutettavia %{hours} h, laskutusaste %{ratio} %%",
+               :en => "    - billable %{hours} h, billing ratio %{ratio} %%"
              },
              :hours_per_code => {
                :fi => "       %{hours}\t%{code}",
                :en => "       %{hours}\t%{code}"
              },
              :non_billable => {
-               :fi => "    - laskutettamattomia %{hours} h, laskuttamattomuusaste %{ratio} %",
-               :en => "    - non-billable %{hours} h, non-billing ratio %{ratio} %"
+               :fi => "    - laskutettamattomia %{hours} h, laskuttamattomuusaste %{ratio} %%",
+               :en => "    - non-billable %{hours} h, non-billing ratio %{ratio} %%"
              },
              :year_total => {
                :fi => "\nVuonna %{year} yhteensä (olettaen %{hours_per_day} h työpäivän):\n%{done_hours} h vuoden %{hours_in_year} työtunnista joista laskutettavia %{billable_in_year} h, laskutusaste %{billing_ratio} %\n",
