@@ -163,7 +163,7 @@ def perce(f)
 end
 
 def div(dividend, divisor)
-  return divisor == 0 ? 0 : dividend / divisor
+  divisor == 0 ? 0 : dividend / divisor
 end
 
 class HourStorage
