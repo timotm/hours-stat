@@ -9,7 +9,7 @@ Encoding.default_external = Encoding::UTF_8
 
 $options = {}
 OptionParser.new do |opt|
-  opt.on('--lang LANG', [:fi, :en], "Language (fi/en)") { |l| $options[:lang] = l }
+  opt.on('--lang LANG', %i[fi en], "Language (fi/en)") { |l| $options[:lang] = l }
   opt.on('--hours HOURS', Float, "Number of working hours per day. If not given, guessed per year") { |h| $options[:hours_per_day] = h }
 end.parse!
 
