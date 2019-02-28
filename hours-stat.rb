@@ -68,7 +68,7 @@ class HolidayCount
     @country_per_year = Hash.new(:fin)
 
     File.open("#{$hours_dir}/holidays.txt") do |f|
-      while (line = f.gets) do
+      while line = f.gets
         d = Date.strptime(line.split(' ')[0], "%d.%m.%Y")
         # Don't count holidays that are either in the weekends or in the future
         if not d.saturday? and not d.sunday? and not d > Date.today
@@ -196,7 +196,7 @@ Dir.entries($hours_dir).select { |e| e.match /[0-9]{4}_[0-9]{2}/ }.sort.each do 
   month_dir = "#{$hours_dir}/#{month}"
   log_name = Dir.entries(month_dir).select { |e| e.match /^[a-z0-9]+\.txt/ }.first
   File.open("#{month_dir}/#{log_name}") do |f|
-    while (line = f.gets) do
+    while line = f.gets
       next if line.match /^ *#/
 
       (pvm, tunnit, tuntikoodi, _) = line.split "\t"
