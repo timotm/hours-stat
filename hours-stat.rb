@@ -200,9 +200,14 @@ Dir.entries($hours_dir).select { |e| e.match(/[0-9]{4}_[0-9]{2}/) }.sort.each do
     while (line = f.gets)
       next if line =~ /^ *#/
 
-      (pvm, tunnit, tuntikoodi,) = line.split "\t"
-      if !tunnit.nil? && (Date.strptime(pvm, '%d.%m.%Y') <= Date.today)
-
+      (pvm, id, start, _end, tunnit, tuntikoodi,) = line.split "\t"
+      pattern = '%Y-%m-%d'
+      if pvm =~ /[0-9]{1,2}\.[0-9]{1,2}\.[0-9]{4}/
+        pattern = '%d.%m.%Y'
+        tunnit = id
+        tuntikoodi = start
+      end
+      if !tunnit.nil? && (Date.strptime(pvm, pattern) <= Date.today)
         hour_storage.store_hours_for_date_code(month_as_date, tuntikoodi, tunnit.tr(',', '.').to_f)
       end
     end
