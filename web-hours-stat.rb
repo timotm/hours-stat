@@ -140,6 +140,8 @@ months_by_year = summary_by_month.reduce({}) do |agg, (yymm, value)|
   agg
 end
 
+current_month = Time.now.strftime("%Y-%m")
+
 months_by_year.sort_by { |k, _| k }.each do |year, codes_hours_by_month|
   billable_hours_for_year = 0
   all_hours_for_year = 0
@@ -148,13 +150,16 @@ months_by_year.sort_by { |k, _| k }.each do |year, codes_hours_by_month|
   puts format(t(:year), year: year)
 
   codes_hours_by_month.sort_by { |k, _| k }.each do |month, hours_by_code|
+    this_month = "#{year}-#{"%02d" % month}"
+
+    break if this_month > current_month
     billable_hours = hours_by_code.select { |k, _| billable?(k, billable_codes) }
     other_hours = hours_by_code.reject { |k, _| billable?(k, billable_codes) }
 
     all_hours_total = hours_by_code.values.inject(:+) || 0
     billable_hours_total = billable_hours.values.inject(:+) || 0
     other_hours_total = other_hours.values.inject(:+) || 0
-    hours_in_this_month = expectedHours["#{year}-#{"%02d" % month}"]
+    hours_in_this_month = expectedHours[this_month]
 
     billable_hours_for_year += billable_hours_total
     all_hours_for_year += all_hours_total
